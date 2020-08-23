@@ -1,0 +1,7 @@
+h1 a, h2 a{
+	color: #0000FF;
+}
+body {
+	padding-lef:15px;
+}
+
