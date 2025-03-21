@@ -1,0 +1,69 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>autoframework - メインページ</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <header>
+        <h1>autoframework</h1>
+        <nav>
+            <ul>
+                <li><a href="{% url 'automation:dynamic_form' schema_name='recognition' %}">Recognition Form</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>機能を試してみる</h2>
+
+            <!-- CSVエクスポート機能 -->
+            <p>以下のボタンをクリックすると、EvaluationモデルのCSVエクスポートがトリガーされます。</p>
+            <form method="post" action="{% url 'automation:index' %}">
+                {% csrf_token %}
+                <button type="submit" class="button">Export Evaluation Fields</button>
+            </form>
+
+            <!-- JSONインポート機能 -->
+            <p>JSONインポート機能:</p>
+            <ul>
+                <li>
+                    <a href="{% url 'automation:import_evaluation' %}" class="button">
+                        Evaluation JSON インポート
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'automation:import_decision' %}" class="button">
+                        Decision JSON インポート
+                    </a>
+                </li>
+            </ul>
+
+            <!-- JSONエクスポート機能 -->
+            <p>JSONエクスポート機能:</p>
+                        <ul>
+                <li>
+                    <a href="{% url 'automation:export_evaluation' %}" class="button">
+                        Evaluation JSON エクスポート
+                    </a>
+                </li>
+            </ul>
+            <ul>
+                <li>
+                    <a href="{% url 'automation:export_decision' %}" class="button">
+                        Decision JSON エクスポート
+                    </a>
+                </li>
+            </ul>
+
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 Your Team Name. All rights reserved.</p>
+    </footer>
+</body>
+</html>
+

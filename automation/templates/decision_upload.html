@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON アップロード (Decision)</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <header>
+        <h1>DecisionモデルのJSONアップロード</h1>
+    </header>
+    <main>
+        <section>
+            <h2>JSONファイルを選択してください</h2>
+            <form method="post" enctype="multipart/form-data" action="{% url 'automation:import_decision' %}">
+                {% csrf_token %}
+                <input type="file" name="file" accept=".json" required>
+                <button type="submit" class="button">アップロード</button>
+            </form>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 Your Team Name. All rights reserved.</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>操作マニュアル</title>
+    <style>
+        /* 変数部分の表示色を緑に設定 */
+        .variable {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h2 id="_1">らくらくんにログインする</h2>
+    <h3 id="bizbrowser">BizBrowser を起動</h3>
+    <ul>
+        <li>Windows ボタンを押下</li>
+        <li>OpenStream→BizBrowser DT(32bit)をクリック</li>
+    </ul>
+    <h3 id="_2">運用らくらくんにアクセス</h3>
+    <ul>
+        <li>アドレスバーに<code class="variable">http://172.18.2.197:8081/crsマルナカinScreen.crs</code>と入力</li>
+        <li>「＞」ボタンを押下</li>
+    </ul>
+    <h3 id="_3">運用らくらくんにログイン</h3>
+    <ul>
+        <li>「ID」欄に自分の ID を入力</li>
+        <li>「password」欄に自分のパスワードを入力</li>
+        <li>「ログインボタン」を押下</li>
+    </ul>
+
+    <h2 id="_4">対応開始を記録する</h2>
+    <p>対応するトランザクションに起因するアラートに対応中の印をつけます。</p>
+    <blockquote>
+        <p>[!NOTE] トランザクションとアラートは 1:N<br>
+        ACMS では自動リトライ機能があるため、リトライが失敗した場合にもアラートが発報される。また指定回数リトライが失敗した場合には、リトライオーバーというアラートも発報される。つまり、ひとつのトランザクションに対して複数のアラートが発報される。</p>
+    </blockquote>
+    <ul>
+        <li>「エラー対応画面へ」ボタンを押下</li>
+    </ul>
+
+    <h3 id="_5">対象のアラートを検索する</h3>
+    <p>画面上部の検索条件で以下の項目を入力する</p>
+    <ul>
+        <li>運用グループ=<code class="variable">{{ result.operation_group_code }}</code></li>
+        <li>ユーザ=<code class="variable">{{ result.user_code }}</code></li>
+        <li>ファイル=<code class="variable">{{ result.file_code }}</code></li>
+    </ul>
+    <p>「検索」ボタンを押下</p>
+    <p>検索結果の先頭に表示されたトランザクションが条件通りであることを確認する</p>
+    <ul>
+        <li>ユーザ=<code class="variable">{{ result.user_code }}</code></li>
+        <li>ファイル=<code class="variable">{{ result.file_code }}</code></li>
+        <li>ステータス=空欄</li>
+        <li>アラート本文=「<span class="variable">{{ result.error_message }}</span>」もしくは、「当該通信スケジュールがリトライオーバーになりました。」</li>
+    </ul>
+
+    <h3 id="_6">対象のアラートに対応開始を記録する</h3>
+    <ul>
+        <li>該当レコードの「ステータス」欄をダブルクリック</li>
+        <li>「対応中」と記入</li>
+        <li>該当のレコードの「担当者」欄をダブルクリック</li>
+        <li>自分の苗字を漢字で記載する。</li>
+        <li>入力した行が選択されていることを確認し、「保存」ボタンを押下</li>
+    </ul>
+
+    <hr>
+    <h2 id="_7">送受信トランザクションを中止に状態変更する</h2>
+    <h3 id="e2x">E2X を開く</h3>
+    <h3 id="_8">送受信トランザクション一覧画面を開く</h3>
+    <p>左ペインより、「状況照会」にある「送受信トランザクション」をクリック</p>
+    <h3 id="_9">対象のトランザクションを検索する</h3>
+    <p>画面上部の検索条件で以下の項目を入力する</p>
+    <ul>
+        <li>運用グループ=<code class="variable">{{ result.operation_group_code }}</code></li>
+        <li>ユーザ=<code class="variable">{{ result.user_code }}</code></li>
+        <li>ファイル=<code class="variable">{{ result.file_code }}</code></li>
+        <li>昇順・降順=昇順</li>
+        <li>状態=<code>停止</code></li>
+    </ul>
+    <p>照会ボタンをクリック</p>
+    <p>照会結果の先頭に表示されたトランザクションが条件通りであることを確認する</p>
+    <ul>
+        <li>運用グループ=<code class="variable">{{ result.operation_group_code }}</code></li>
+        <li>ユーザ=<code class="variable">{{ result.user_code }}</code></li>
+        <li>ファイル=<code class="variable">{{ result.file_code }}</code></li>
+        <li>状態=<code>停止</code></li>
+    </ul>
+    <h3 id="_10">状態を変更する</h3>
+    <p>照会結果の任意の情報にチェックを入れる</p>
+    <p>「操作」→「<code>中止</code>」を選択</p>
+    <p>実行ボタンをクリック</p>
+    <p>状態が<code>中止</code>となったことを確認する</p>
+</body>
+</html>
+
