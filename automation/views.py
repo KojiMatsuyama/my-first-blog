@@ -79,8 +79,11 @@ class ImportModelView(BaseDynamicModelView):
             return ['evaluation_upload.html']
         elif schema_name == 'Decision':
             return ['decision_upload.html']
+        elif schema_name == 'Recognition':  # Recognition用の処理を追加
+            return ['recognition_upload.html']
         else:
             raise Http404(f"テンプレートが見つかりません: schema_name='{schema_name}'")
+
 
     @method_decorator(csrf_exempt)
     def post(self, request, *args, **kwargs):

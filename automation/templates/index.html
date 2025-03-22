@@ -12,10 +12,11 @@
         <h1>autoframework</h1>
         <nav>
             <ul>
-                <li><a href="{% url 'automation:dynamic_form' schema_name='recognition' %}">Recognition Form</a></li>
+                <li><a href="{% url 'automation:dynamic_form' schema_name='recognition' %}">EDIアラート入力</a></li>
             </ul>
         </nav>
     </header>
+
     <main>
         <section>
             <h2>機能を試してみる</h2>
@@ -40,27 +41,35 @@
                         Decision JSON インポート
                     </a>
                 </li>
+                <li>
+                    <a href="{% url 'automation:import_recognition' %}" class="button">
+                        Recognition JSON インポート
+                    </a>
+                </li>
             </ul>
 
             <!-- JSONエクスポート機能 -->
             <p>JSONエクスポート機能:</p>
-                        <ul>
+            <ul>
                 <li>
                     <a href="{% url 'automation:export_evaluation' %}" class="button">
                         Evaluation JSON エクスポート
                     </a>
                 </li>
-            </ul>
-            <ul>
                 <li>
                     <a href="{% url 'automation:export_decision' %}" class="button">
                         Decision JSON エクスポート
                     </a>
                 </li>
+                <li>
+                    <a href="{% url 'automation:export_recognition' %}" class="button">
+                        Recognition JSON エクスポート
+                    </a>
+                </li>
             </ul>
-
         </section>
     </main>
+
     <footer>
         <p>&copy; 2025 Your Team Name. All rights reserved.</p>
     </footer>
