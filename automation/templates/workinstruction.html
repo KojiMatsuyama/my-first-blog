@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Evaluation and Decision</title>
+</head>
+<body>
+    <h1>Evaluation and Decision Result</h1>
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit</button>
+    </form>
+
+    {% if error_message %}
+        <p style="color: red;">{{ error_message }}</p>
+    {% elif result %}
+        <p><strong>Status:</strong> {{ result.judge }}</p>
+        <p><strong>Phone Action:</strong> {{ result.PhoneAction }}</p>
+        <p><strong>EDI Action:</strong> {{ result.EDIAction }}</p>
+        <p><strong>Record Action:</strong> {{ result.RecordAction }}</p>
+
+    {% endif %}
+</body>
+</html>
