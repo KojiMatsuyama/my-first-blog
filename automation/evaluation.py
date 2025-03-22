@@ -1,6 +1,6 @@
 from .schema import get_schema_fields
 from django.apps import apps
-
+from django.core.exceptions import ObjectDoesNotExist
 
 class Evaluation:
     """
@@ -65,21 +65,27 @@ class Evaluation:
             # フィルタ条件を構築
             filter_conditions = self.build_filter_conditions(schema_fields)
 
-            # データベース内の評価基準と一致するものを取得
-            judge = self.model.objects.get(**filter_conditions)
+            # 条件にマッチするデータを取得
+            try:
+                judge = self.model.objects.get(**filter_conditions)
+            except ObjectDoesNotExist:
+                # 条件にマッチしなかった場合に「連絡あり」と返す
+                judge = {
+                    'message': "連絡あり"
+                }
 
             # 結果を辞書形式で構築
             result_data = {
                 field['name']: getattr(judge, field['name'], None)
                 for field in schema_fields
             }
-            return result_data, None
 
-        except self.model.DoesNotExist:
-            return None, "条件に一致するデータが見つかりません。"
+            # judgeが辞書の場合（条件にマッチしなかった場合）を考慮
+            if isinstance(judge, dict):
+                result_data['judge'] = judge['message']
 
-        except AttributeError as ae:
-            return None, f"モデルフィールドのエラー: {str(ae)}"
+            return result_data
 
         except Exception as e:
-            return None, f"予期しないエラーが発生しました: {str(e)}"
+            # エラー時にエラーメッセージを返す
+            return None, str(e)

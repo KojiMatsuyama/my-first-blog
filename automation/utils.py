@@ -28,28 +28,3 @@ def get_schema_fields(schema_name):
     except Schema.DoesNotExist:
         return None
 
-def evaluate_bitwise_or(target: str, mask: str) -> bool:
-    """
-    評価対象のテキストと評価ビットを基に論理和を計算し、
-    結果が評価ビットと一致する場合はTrue、一致しない場合はFalseを返す。
-
-    Args:
-        target (str): 評価対象のテキスト（8文字のビット文字列）
-        mask (str): 評価ビット（8文字のビット文字列）
-
-    Returns:
-        bool: 論理和の結果が評価ビットと一致するかどうか
-    """
-    # 入力値の長さチェック
-    if len(target) != 8 or len(mask) != 8:
-        raise ValueError("Both target and mask must be 8-character binary strings.")
-
-    # 2進数に変換
-    target_int = int(target, 2)
-    mask_int = int(mask, 2)
-
-    # 論理和を計算
-    result = target_int | mask_int
-
-    # 結果を元の形式（文字列）に戻して評価
-    return format(result, '08b') == mask
