@@ -196,7 +196,17 @@ class AutomationConfig(AppConfig):
                 fields[schema_field.name] = models.IntegerField(**field_options)
             elif field_type == "BooleanField":
                 fields[schema_field.name] = models.BooleanField(**field_options)
-
+            elif field_type == "DecimalField":
+                fields[schema_field.name] = models.DecimalField(max_digits=10, decimal_places=2, **field_options)
+            elif field_type == "DateField":
+                fields[schema_field.name] = models.DateField(**field_options)
+            elif field_type == "DateTimeField":
+                fields[schema_field.name] = models.DateTimeField(**field_options)
+            elif field_type == "ChoiceField":
+                field_options["choices"] = schema_field.choices  # 必要であればchoicesを追加
+                fields[schema_field.name] = models.CharField(max_length=255, **field_options)
+            else:
+                raise ValueError(f"未知のフィールドタイプ: {field_type}")  # 未対応のフィールドタイプへの対応
         return fields
 
     def _register_to_apps(self, table_name, dynamic_model):

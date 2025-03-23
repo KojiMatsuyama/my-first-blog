@@ -1,15 +1,20 @@
+from django.views import View
 from django.views.generic import TemplateView, FormView
 from django.apps import apps
 import os
 import json
 import logging
+import traceback
 from django.http import JsonResponse, HttpResponse, Http404
-from django.views.generic import TemplateView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db import models
 from django.shortcuts import render
-from .excel_to_json import excel_to_json  # 外部モジュールから関数をインポート
+from .excel_to_json import excel_to_json
+from django.core.exceptions import ObjectDoesNotExist
+from .admin import Schema, SchemaFields
+from django.http import HttpResponse, JsonResponse
+from django.apps import apps
 
 # ログの設定
 logger = logging.getLogger(__name__)
@@ -142,7 +147,6 @@ class ImportModelView(BaseDynamicModelView):
             logger.error(f"インポート処理中にエラーが発生しました: {e}")
             return JsonResponse({"error": f"エラーが発生しました: {str(e)}"}, status=500)
 
-
     def _import_record(self, DynamicModel, record):
         """
         個々のレコードをデータベースにインポート
@@ -166,69 +170,270 @@ class ImportModelView(BaseDynamicModelView):
                 logger.error(f"レコードのインポート中にエラーが発生しました: {e}")
                 raise  # エラーを再スローし、適切に処理
 
-class ExportModelView(BaseDynamicModelView):
-    """動的モデルのJSONエクスポートビュー"""
+# def export_schema_json(request):
+#     try:
+#         print("export_schema_json に到達")
+#         logger.info("export_schema_json に到達")
+#
+#         # Schema モデルを取得
+#         SchemaModel = apps.get_model('automation', 'Schema')
+#         schemas = SchemaModel.objects.all()
+#         print(f"取得したスキーマ数: {schemas.count()}")
+#
+#         # SchemaField のリレーション名を確認
+#         if hasattr(schemas.first(), 'fields'):
+#             print("スキーマに 'fields' リレーションが存在します")
+#             schemas = schemas.prefetch_related('fields')
+#             field_attr = 'fields'
+#         else:
+#             print("スキーマに 'schemafield_set' リレーションが存在します")
+#             schemas = schemas.prefetch_related('schemafield_set')
+#             field_attr = 'schemafield_set'
+#
+#         # JSONデータを構築
+#         schema_list = []
+#         for schema in schemas:
+#             print(f"スキーマ: {schema.name}, ID: {schema.id}")
+#             fields_data = []
+#             for field in getattr(schema, field_attr).all():
+#                 print(f"  フィールド: {field.name}, ID: {field.id}")
+#                 fields_data.append({
+#                     "id": field.id,
+#                     "name": field.name,
+#                     "field_type": field.field_type,
+#                     "is_required": field.is_required,
+#                     "choices": field.choices,
+#                 })
+#             schema_list.append({
+#                 "id": schema.id,
+#                 "name": schema.name,
+#                 "description": schema.description,
+#                 "fields": fields_data,
+#             })
+#
+#         # JSONデータをダウンロード形式で返す
+#         response_data = json.dumps(schema_list, ensure_ascii=False, indent=4)
+#         print(f"レスポンスデータ（サンプル）: {response_data[:200]}")  # 最初の200文字だけ表示
+#
+#         # response = HttpResponse(response_data, content_type='application/json')
+#         response = HttpResponse(response_data, content_type='application/octet-stream')
+#         response['Content-Disposition'] = 'attachment; filename="schema_export.json"'
+#
+#         # ✅ キャッシュ防止ヘッダーを追加（必要に応じて）
+#         response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+#         response['Pragma'] = 'no-cache'
+#         response['Expires'] = '0'
+#
+#         print("レスポンス準備完了")
+#         logger.info("[INFO] Content-Disposition: %s", response['Content-Disposition'])
+#         logger.info("[INFO] Response Content-Type: %s", response['Content-Type'])
+#         logger.info("[INFO] Response Data (Sample): %s", response_data[:500])
+#         logger.info("[INFO] Content-Disposition: %s", response['Content-Disposition'])
+#
+#         return response
+#
+#     except Exception as e:
+#         print(f"エラー発生: {e}")
+#         logger.error(f"エラーが発生しました: {e}")
+#         return HttpResponse(
+#             json.dumps({"error": f"エラーが発生しました: {str(e)}"}, ensure_ascii=False),
+#             content_type='application/json',
+#             status=500
+#         )
+#
+#     except Exception as e:
+#         logger.error(f"export_schema_json エラー: {e}")
+#         return JsonResponse({"error": "エクスポート中にエラーが発生しました"}, status=500)
 
-    @method_decorator(csrf_exempt)
-    def get(self, request, *args, **kwargs):
-        schema_name = kwargs.get('schema_name')
-        logger.info(f"エクスポート処理を開始します。スキーマ名: {schema_name}")
 
+def export_schema_filtered(request):
+    """
+    指定されたスキーマ名に基づいてデータをエクスポート
+    """
+    print("export_schema_filtered に到達")  # 到達確認
+    schema_name = request.GET.get('schema_name')  # GETパラメータからスキーマ名を取得
+    if not schema_name:
+        print("スキーマ名が指定されていません")  # 確認用
+        return HttpResponse(
+            json.dumps({"error": "スキーマ名が指定されていません。"}, ensure_ascii=False),
+            content_type='application/json',
+            status=400
+        )
+
+    try:
+        # スキーマデータをフィルタリング
+        print(f"指定されたスキーマ名: {schema_name}")  # 確認用
+        schema = Schema.objects.filter(name=schema_name).first()
+        if not schema:
+            print(f"スキーマ '{schema_name}' が見つかりません")  # 確認用
+            return HttpResponse(
+                json.dumps({"error": f"スキーマ '{schema_name}' が見つかりません。"}, ensure_ascii=False),
+                content_type='application/json',
+                status=404
+            )
+
+        print(f"取得したスキーマ: ID={schema.id}, 名前={schema.name}, 説明={schema.description}")  # 確認用
+
+        # 関連するフィールドデータを取得
+        schema_fields = SchemaFields.objects.filter(schema=schema)  # `schema` に修正
+        print(f"関連フィールド数: {schema_fields.count()}")  # 確認用
+
+        # 各フィールドのデータを出力
+        for field in schema_fields:
+            print(
+                f"フィールド - ID: {field.id}, 名前: {field.name}, 型: {field.field_type}, 必須: {field.is_required}")  # 確認用
+
+        # データ構築
+        schema_data = {
+            "schema": {
+                "id": schema.id,
+                "name": schema.name,
+                "description": schema.description
+            },
+            "fields": [
+                {
+                    "id": field.id,
+                    "field_name": field.name,
+                    "field_type": field.field_type,
+                    # "field_description": field.field_description
+                }
+                for field in schema_fields
+            ]
+        }
+
+        # JSONとしてエクスポート
+        response_data = json.dumps(schema_data, ensure_ascii=False, indent=4)
+        print(f"エクスポートするデータ（サンプル）: {response_data[:200]}")  # 最初の200文字を出力
+        response = HttpResponse(response_data, content_type='application/json')
+        response['Content-Disposition'] = f'attachment; filename="{schema_name}_export.json"'
+        print("レスポンスの準備が完了しました")  # 確認用
+        return response
+
+    except Exception as e:
+        print(f"エラーが発生しました: {e}")  # エラーメッセージを表示
+        return HttpResponse(
+            json.dumps({"error": f"エラーが発生しました: {str(e)}"}, ensure_ascii=False),
+            content_type='application/json',
+            status=500
+        )
+
+
+class ExportUnifiedView(View):
+    def get(self, request, schema_name, *args, **kwargs):
         try:
-            # 動的モデルを取得
-            DynamicModel = self.get_dynamic_model(schema_name)
-            logger.info(f"モデル '{schema_name}' を正常に取得しました。")
+            logger.info(f"ExportUnifiedView: {schema_name} を処理中")
 
-            # モデルからデータを取得
-            data = list(DynamicModel.objects.values())
-            logger.info(f"モデル '{schema_name}' からデータを取得しました。件数: {len(data)}")
+            # 動的にモデルを取得
+            Model = apps.get_model('automation', schema_name)
+            objects = Model.objects.all().values()
 
-            if not data:
-                # ダミーデータを生成
+            if not objects.exists():
                 logger.warning(f"モデル '{schema_name}' にデータが存在しません。ダミーデータを生成します。")
-                fields = DynamicModel._meta.get_fields()
-                dummy_data = {}
+                dummy_data = self.create_dummy_data(Model)
+                objects = [dummy_data]
 
-                for field in fields:
-                    if field.is_relation:
-                        continue  # リレーションフィールドを除外
+            # JSONデータ作成
+            export_data = {
+                "schema": self.get_schema_info(schema_name, Model),
+                "data": list(objects),
+            }
 
-                    # フィールド型ごとに適切な値を設定
-                    if isinstance(field, models.AutoField):  # IDフィールド
-                        dummy_data[field.name] = 1
-                    elif isinstance(field, models.IntegerField):  # 整数型
-                        dummy_data[field.name] = 0
-                    elif isinstance(field, models.CharField):  # 文字列型
-                        dummy_data[field.name] = f"sample_{field.name}"
-                    elif isinstance(field, models.BooleanField):  # 真偽値型
-                        dummy_data[field.name] = False
-                    elif isinstance(field, models.DateField):  # 日付型
-                        dummy_data[field.name] = "2025-01-01"
-                    elif isinstance(field, models.DateTimeField):  # 日時型
-                        dummy_data[field.name] = "2025-01-01T00:00:00Z"
-                    else:
-                        dummy_data[field.name] = None  # その他の型
-
-                data.append(dummy_data)
-                logger.info(f"ダミーデータ生成完了: {dummy_data}")
-
-            # データをJSON形式に変換
-            json_data = json.dumps(data, ensure_ascii=False, indent=4)
-            logger.info(f"データをJSON形式に変換しました。")
-
-            # ファイル名を生成
+            # JSONレスポンスを返す
+            json_data = json.dumps(export_data, ensure_ascii=False, indent=4)
             file_name = f"{schema_name}_export.json"
             response = HttpResponse(json_data, content_type='application/json')
             response['Content-Disposition'] = f'attachment; filename="{file_name}"'
             return response
 
-        except Http404 as e:
-            logger.error(f"モデル '{schema_name}' が見つかりません: {e}")
-            return JsonResponse({"error": str(e)}, status=404)
-        except Exception as e:
-            logger.exception(f"エクスポート処理中に予期しないエラーが発生しました: {e}")
-            return JsonResponse({"error": f"エラー: {str(e)}"}, status=500)
+        except ObjectDoesNotExist:
+            logger.error(f"モデル '{schema_name}' が見つかりません。")
+            return JsonResponse({"error": f"モデル '{schema_name}' が存在しません。"}, status=404)
 
+        except Exception as e:
+            logger.exception(f"ExportUnifiedView エラー: {e}")
+            traceback.print_exc()
+            return JsonResponse({"error": "エクスポート中にエラーが発生しました"}, status=500)
+
+    def get_schema_info(self, schema_name, Model):
+        return {
+            "model": schema_name,
+            "fields": [
+                {
+                    "name": field.name,
+                    "type": field.get_internal_type(),
+                }
+                for field in Model._meta.fields
+            ],
+        }
+
+    def create_dummy_data(self, Model):
+        dummy_data = {}
+        for field in Model._meta.fields:
+            if field.get_internal_type() == 'CharField':
+                dummy_data[field.name] = "サンプル"
+            elif field.get_internal_type() == 'IntegerField':
+                dummy_data[field.name] = 0
+            else:
+                dummy_data[field.name] = None
+        return dummy_data
+
+    def get_schema_info(self, schema_name, model):
+        """スキーマと関連するフィールド情報を取得"""
+        try:
+            SchemaModel = apps.get_model('automation', 'Schema')
+            schema = SchemaModel.objects.prefetch_related('fields').get(name=schema_name)
+            field_attr = 'fields' if hasattr(schema, 'fields') else 'schemafield_set'
+
+            schema_info = {
+                "id": schema.id,
+                "name": schema.name,
+                "description": schema.description,
+                "fields": [
+                    {
+                        "id": field.id,
+                        "name": field.name,
+                        "field_type": field.field_type,
+                        "is_required": field.is_required,
+                        "choices": getattr(field, "choices", None),  # choices属性が存在する場合のみ取得
+                        "max_length": getattr(field, "max_length", None),  # 文字列フィールド用
+                        "decimal_places": getattr(field, "decimal_places", None),  # DecimalField用
+                        "max_digits": getattr(field, "max_digits", None),  # DecimalField用
+                        "default_value": getattr(field, "default", None)  # デフォルト値を追加で取得
+                    }
+
+                    for field in getattr(schema, field_attr).all()
+                ],
+            }
+            return schema_info
+
+        except Exception as e:
+            logger.warning(f"スキーマ情報の取得中にエラーが発生しました: {e}")
+            return {"error": "スキーマ情報の取得に失敗しました。"}
+
+    def create_dummy_data(self, model):
+        """モデルに基づきダミーデータを生成"""
+        dummy_data = {}
+        for field in model._meta.get_fields():
+            if field.is_relation:
+                continue  # リレーションフィールドは除外
+
+            # 各フィールド型に応じたサンプル値を生成
+            if isinstance(field, models.AutoField):
+                dummy_data[field.name] = 1
+            elif isinstance(field, models.IntegerField):
+                dummy_data[field.name] = 0
+            elif isinstance(field, models.CharField):
+                dummy_data[field.name] = f"sample_{field.name}"
+            elif isinstance(field, models.BooleanField):
+                dummy_data[field.name] = False
+            elif isinstance(field, models.DateField):
+                dummy_data[field.name] = "2025-01-01"
+            elif isinstance(field, models.DateTimeField):
+                dummy_data[field.name] = "2025-01-01T00:00:00Z"
+            else:
+                dummy_data[field.name] = None
+
+        return dummy_data
     def get_dynamic_model(self, schema_name):
         """
         スキーマ名に基づいて動的モデルを取得
@@ -249,9 +454,6 @@ class ExportModelView(BaseDynamicModelView):
         except LookupError as e:
             logger.error(f"モデル '{schema_name}' の取得中にエラーが発生しました: {e}")
             raise Http404(f"モデル '{schema_name}' が見つかりません。")
-
-
-
 
 class DynamicRecognitionView(FormView):
     """Recognitionモデル用の動的フォームビュー"""
@@ -342,60 +544,60 @@ class DynamicRecognitionView(FormView):
         return self.render_to_response({'form': form, 'error_message': error_message})
 
 
-def export_schema_json(request):
-    try:
-        print("export_schema_json に到達")
-
-        # Schema モデルを取得
-        schema_name = "Schema"
-        SchemaModel = apps.get_model('automation', schema_name)
-        print(f"取得したモデル: {SchemaModel}")
-
-        # モデルのフィールド情報を出力
-        print("SchemaModel のフィールド:")
-        for field in SchemaModel._meta.get_fields():
-            print(f"- {field.name} (type: {type(field)})")
-
-        # SchemaField のリレーション名を確認
-        schemas = SchemaModel.objects.all()
-        print(f"取得した Schema 件数: {schemas.count()}")
-
-        # リレーションがあるか確認
-        for schema in schemas:
-            print(f"Schema ID: {schema.id}")
-            print(f"関連フィールド: {dir(schema)}")
-
-        # リレーション名を確認し、正しい名前でアクセス
-        if hasattr(schema, 'fields'):
-            schemas = SchemaModel.objects.prefetch_related('fields').all()
-            field_attr = 'fields'
-        else:
-            schemas = SchemaModel.objects.prefetch_related('schemafield_set').all()
-            field_attr = 'schemafield_set'
-
-        schema_list = [
-            {
-                "id": schema.id,
-                "name": schema.name,
-                "description": schema.description,
-                "fields": [
-                    {
-                        "id": getattr(field, 'id'),
-                        "name": getattr(field, 'name'),
-                        "field_type": getattr(field, 'field_type'),
-                        "is_required": getattr(field, 'is_required'),
-                        "choices": getattr(field, 'choices'),
-                    }
-                    for field in getattr(schema, field_attr).all()
-                ],
-            }
-            for schema in schemas
-        ]
-
-        return JsonResponse(schema_list, safe=False, json_dumps_params={'indent': 4, 'ensure_ascii': False})
-
-    except Exception as e:
-        print(f"エラー発生: {e}")
-        traceback.print_exc()
-        logger.error(f"export_schema_json エラー: {e}")
-        return JsonResponse({"error": "エクスポート中にエラーが発生しました"}, status=500)
+# def export_schema_json(request):
+#     try:
+#         print("export_schema_json に到達")
+#
+#         # Schema モデルを取得
+#         schema_name = "Schema"
+#         SchemaModel = apps.get_model('automation', schema_name)
+#         print(f"取得したモデル: {SchemaModel}")
+#
+#         # モデルのフィールド情報を出力
+#         print("SchemaModel のフィールド:")
+#         for field in SchemaModel._meta.get_fields():
+#             print(f"- {field.name} (type: {type(field)})")
+#
+#         # SchemaField のリレーション名を確認
+#         schemas = SchemaModel.objects.all()
+#         print(f"取得した Schema 件数: {schemas.count()}")
+#
+#         # リレーションがあるか確認
+#         for schema in schemas:
+#             print(f"Schema ID: {schema.id}")
+#             print(f"関連フィールド: {dir(schema)}")
+#
+#         # リレーション名を確認し、正しい名前でアクセス
+#         if hasattr(schema, 'fields'):
+#             schemas = SchemaModel.objects.prefetch_related('fields').all()
+#             field_attr = 'fields'
+#         else:
+#             schemas = SchemaModel.objects.prefetch_related('schemafield_set').all()
+#             field_attr = 'schemafield_set'
+#
+#         schema_list = [
+#             {
+#                 "id": schema.id,
+#                 "name": schema.name,
+#                 "description": schema.description,
+#                 "fields": [
+#                     {
+#                         "id": getattr(field, 'id'),
+#                         "name": getattr(field, 'name'),
+#                         "field_type": getattr(field, 'field_type'),
+#                         "is_required": getattr(field, 'is_required'),
+#                         "choices": getattr(field, 'choices'),
+#                     }
+#                     for field in getattr(schema, field_attr).all()
+#                 ],
+#             }
+#             for schema in schemas
+#         ]
+#
+#         return JsonResponse(schema_list, safe=False, json_dumps_params={'indent': 4, 'ensure_ascii': False})
+#
+#     except Exception as e:
+#         print(f"エラー発生: {e}")
+#         traceback.print_exc()
+#         logger.error(f"export_schema_json エラー: {e}")
+#         return JsonResponse({"error": "エクスポート中にエラーが発生しました"}, status=500)

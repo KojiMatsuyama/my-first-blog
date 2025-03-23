@@ -44,26 +44,34 @@
             <p>JSONエクスポート機能:</p>
             <ul>
                 <li>
-                    <a href="{% url 'automation:export_evaluation' %}" class="button">
+                    <a href="{% url 'automation:export_unified' schema_name='Evaluation' %}" class="button">
                         Evaluation JSON エクスポート
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'automation:export_decision' %}" class="button">
+                    <a href="{% url 'automation:export_unified' schema_name='Decision' %}" class="button">
                         Decision JSON エクスポート
                     </a>
                 </li>
                 <li>
-                    <a href="{% url 'automation:export_recognition' %}" class="button">
+                    <a href="{% url 'automation:export_unified' schema_name='Recognition' %}" class="button">
                         Recognition JSON エクスポート
                     </a>
                 </li>
-                <li>
-                    <a href="{% url 'automation:export_schema' %}" class="button">
-                        Schemas JSON エクスポート
-                    </a>
-                </li>
             </ul>
+
+            <!-- 条件選択付きのエクスポートフォーム -->
+            <p>スキーマを選択してエクスポート:</p>
+            <form method="get" action="{% url 'automation:export_schema_filtered' %}">
+                <label for="schema">スキーマを選択:</label>
+                <select id="schema" name="schema_name">
+                    <option value="Recognition">Recognition</option>
+                    <option value="Evaluation">Evaluation</option>
+                    <option value="Decision">Decision</option>
+                </select>
+                <button type="submit">エクスポート</button>
+            </form>
+
         </section>
     </main>
 

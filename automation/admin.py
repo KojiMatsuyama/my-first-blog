@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django.apps import apps
-from .schema import Schema, SchemaField
+from .schema import Schema, SchemaFields
 
 
 ### SchemaField Inline ###
@@ -9,13 +9,12 @@ class SchemaFieldInline(admin.TabularInline):
     """
     Schema に関連付けられた SchemaField をインライン編集可能に
     """
-    model = SchemaField
+    model = SchemaFields
     extra = 1
     fields = ("name", "field_type", "is_required", "choices")
     verbose_name = "スキーマフィールド"
     verbose_name_plural = "スキーマフィールド"
     help_text = "ChoiceField の場合、choices にカンマ区切りで選択肢を入力してください。"
-
 
 ### Schema 管理画面 ###
 @admin.register(Schema)
@@ -26,7 +25,6 @@ class SchemaAdmin(admin.ModelAdmin):
     list_display = ("name", "description")
     search_fields = ("name",)
     inlines = [SchemaFieldInline]
-
 
 ### DynamicFieldMixin ###
 class DynamicFieldMixin:
@@ -39,6 +37,9 @@ class DynamicFieldMixin:
         "BooleanField": forms.BooleanField,
         "ChoiceField": forms.ChoiceField,
         "TextField": forms.CharField,
+        "DecimalField": forms.DecimalField,  # 小数を扱うフィールド
+        "DateField": forms.DateField,  # 日付を扱うフィールド
+        "DateTimeField": forms.DateTimeField  # 日時を扱うフィールド
     }
 
     def add_dynamic_fields(self, form, schema_name):
@@ -80,7 +81,6 @@ class DynamicFieldMixin:
         form = super().get_form(request, obj, **kwargs)
         schema_name = getattr(obj, "schema_name", "Evaluation") if obj else "Evaluation"
         return self.add_dynamic_fields(form, schema_name)
-
 
 ### Generic Dynamic Admin for Models ###
 class GenericDynamicAdmin(DynamicFieldMixin, admin.ModelAdmin):

@@ -45,7 +45,7 @@ class Schema(models.Model):
         return self.name
 
 ### スキーマに紐づくフィールド ###
-class SchemaField(models.Model):
+class SchemaFields(models.Model):
     """
     スキーマ内のフィールドを定義
     """
@@ -172,7 +172,10 @@ def get_schema_fields(schema_name):
                 "name": field.name,
                 "type": field.field_type,
                 "required": field.is_required,
-                "choices": field.get_choices() if field.field_type == "ChoiceField" else None
+                "choices": field.get_choices() if hasattr(field, "get_choices") else None,  # 安全にchoicesを取得
+                "max_length": getattr(field, "max_length", None),  # 文字列型フィールド用
+                "decimal_places": getattr(field, "decimal_places", None),  # DecimalField用
+                "max_digits": getattr(field, "max_digits", None)  # DecimalField用
             }
             for field in fields
         ]
