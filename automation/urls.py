@@ -4,8 +4,8 @@ from .views import (
     DynamicRecognitionView,
     ExportModelView,
     ImportModelView,
+    export_schema_json,
 )
-
 app_name = 'automation'
 
 urlpatterns = [
@@ -21,10 +21,12 @@ urlpatterns = [
     path('export/evaluation/', ExportModelView.as_view(), name='export_evaluation', kwargs={'schema_name': 'Evaluation'}),
     path('export/decision/', ExportModelView.as_view(), name='export_decision', kwargs={'schema_name': 'Decision'}),
     path('export/recognition/', ExportModelView.as_view(), name='export_recognition', kwargs={'schema_name': 'Recognition'}),  # 追加
+    path('export/schema/', export_schema_json, name='export_schema'),
 
     # データインポート
     path('import/evaluation/', ImportModelView.as_view(), name='import_evaluation', kwargs={'schema_name': 'Evaluation'}),
     path('import/decision/', ImportModelView.as_view(), name='import_decision', kwargs={'schema_name': 'Decision'}),
     path('import/recognition/', ImportModelView.as_view(), name='import_recognition', kwargs={'schema_name': 'Recognition'}),  # 追加
+    path('import/schema/', ImportModelView.as_view(), name='import_schema',kwargs={'schema_name': 'Schema'}),  # 追加
 ]
 

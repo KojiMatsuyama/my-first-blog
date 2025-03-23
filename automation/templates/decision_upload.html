@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON アップロード (Decision)</title>
+    <title>Decision アップロード (Decision)</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
@@ -13,10 +13,11 @@
     </header>
     <main>
         <section>
-            <h2>JSONファイルを選択してください</h2>
+            <h2>ExcelまたはJSONファイルを選択してください</h2>
             <form method="post" enctype="multipart/form-data" action="{% url 'automation:import_decision' %}">
                 {% csrf_token %}
-                <input type="file" name="file" accept=".json" required>
+                <label for="file">ファイルを選択（.json, .xlsx, .xls）：</label>
+                <input type="file" name="file" id="file" accept=".json,.xlsx,.xls" required>
                 <button type="submit" class="button">アップロード</button>
             </form>
         </section>

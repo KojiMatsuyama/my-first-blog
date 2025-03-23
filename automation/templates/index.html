@@ -19,14 +19,6 @@
 
     <main>
         <section>
-            <h2>機能を試してみる</h2>
-
-            <!-- CSVエクスポート機能 -->
-            <p>以下のボタンをクリックすると、EvaluationモデルのCSVエクスポートがトリガーされます。</p>
-            <form method="post" action="{% url 'automation:index' %}">
-                {% csrf_token %}
-                <button type="submit" class="button">Export Evaluation Fields</button>
-            </form>
 
             <!-- JSONインポート機能 -->
             <p>JSONインポート機能:</p>
@@ -64,6 +56,11 @@
                 <li>
                     <a href="{% url 'automation:export_recognition' %}" class="button">
                         Recognition JSON エクスポート
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url 'automation:export_schema' %}" class="button">
+                        Schemas JSON エクスポート
                     </a>
                 </li>
             </ul>

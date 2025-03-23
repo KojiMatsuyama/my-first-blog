@@ -1,5 +1,6 @@
 from django.views.generic import TemplateView, FormView
 from django.apps import apps
+import os
 import json
 import logging
 from django.http import JsonResponse, HttpResponse, Http404
@@ -8,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db import models
 from django.shortcuts import render
+from .excel_to_json import excel_to_json  # 外部モジュールから関数をインポート
 
 # ログの設定
 logger = logging.getLogger(__name__)
@@ -99,7 +101,22 @@ class ImportModelView(BaseDynamicModelView):
                 return JsonResponse({"error": "ファイルがアップロードされていません。"}, status=400)
 
             uploaded_file = request.FILES['file']
-            data = self.validate_json_file(uploaded_file)
+            _, file_extension = os.path.splitext(uploaded_file.name)
+
+            if file_extension == '.xlsx':
+                # エクセルファイルの場合、JSONに変換
+                json_file_path = 'output.json'  # 出力先パス
+                # excel_to_json(uploaded_file.temporary_file_path(), json_file_path)
+                excel_to_json(uploaded_file, json_file_path)  # 変更点
+
+                with open(json_file_path, 'r', encoding='utf-8') as json_file:
+                    data = json.load(json_file)  # 変換後のJSONデータを読み込み
+            elif file_extension == '.json':
+                # JSONファイルの場合、そのまま読み込み
+                data = json.load(uploaded_file)
+            else:
+                logger.error(f"サポートされていないファイル形式です: {file_extension}")
+                return JsonResponse({"error": f"サポートされていないファイル形式です: {file_extension}"}, status=400)
 
             # 動的モデルを取得
             DynamicModel = self.get_dynamic_model(schema_name)
@@ -124,6 +141,7 @@ class ImportModelView(BaseDynamicModelView):
         except Exception as e:
             logger.error(f"インポート処理中にエラーが発生しました: {e}")
             return JsonResponse({"error": f"エラーが発生しました: {str(e)}"}, status=500)
+
 
     def _import_record(self, DynamicModel, record):
         """
@@ -217,6 +235,13 @@ class ExportModelView(BaseDynamicModelView):
         """
         from django.apps import apps
         try:
+            # automationアプリの全モデルを取得
+            models_in_automation = apps.get_app_config('automation').get_models()
+
+            # デバッグのためモデル一覧を表示
+            for model in models_in_automation:
+                print(f"Model: {model.__name__}")
+
             DynamicModel = apps.get_model('automation', schema_name)
             if not DynamicModel:
                 raise LookupError(f"モデル '{schema_name}' が見つかりません。")
@@ -224,6 +249,9 @@ class ExportModelView(BaseDynamicModelView):
         except LookupError as e:
             logger.error(f"モデル '{schema_name}' の取得中にエラーが発生しました: {e}")
             raise Http404(f"モデル '{schema_name}' が見つかりません。")
+
+
+
 
 class DynamicRecognitionView(FormView):
     """Recognitionモデル用の動的フォームビュー"""
@@ -312,3 +340,62 @@ class DynamicRecognitionView(FormView):
     def _render_error(self, form, error_message):
         logger.error(f"エラー: {error_message}")
         return self.render_to_response({'form': form, 'error_message': error_message})
+
+
+def export_schema_json(request):
+    try:
+        print("export_schema_json に到達")
+
+        # Schema モデルを取得
+        schema_name = "Schema"
+        SchemaModel = apps.get_model('automation', schema_name)
+        print(f"取得したモデル: {SchemaModel}")
+
+        # モデルのフィールド情報を出力
+        print("SchemaModel のフィールド:")
+        for field in SchemaModel._meta.get_fields():
+            print(f"- {field.name} (type: {type(field)})")
+
+        # SchemaField のリレーション名を確認
+        schemas = SchemaModel.objects.all()
+        print(f"取得した Schema 件数: {schemas.count()}")
+
+        # リレーションがあるか確認
+        for schema in schemas:
+            print(f"Schema ID: {schema.id}")
+            print(f"関連フィールド: {dir(schema)}")
+
+        # リレーション名を確認し、正しい名前でアクセス
+        if hasattr(schema, 'fields'):
+            schemas = SchemaModel.objects.prefetch_related('fields').all()
+            field_attr = 'fields'
+        else:
+            schemas = SchemaModel.objects.prefetch_related('schemafield_set').all()
+            field_attr = 'schemafield_set'
+
+        schema_list = [
+            {
+                "id": schema.id,
+                "name": schema.name,
+                "description": schema.description,
+                "fields": [
+                    {
+                        "id": getattr(field, 'id'),
+                        "name": getattr(field, 'name'),
+                        "field_type": getattr(field, 'field_type'),
+                        "is_required": getattr(field, 'is_required'),
+                        "choices": getattr(field, 'choices'),
+                    }
+                    for field in getattr(schema, field_attr).all()
+                ],
+            }
+            for schema in schemas
+        ]
+
+        return JsonResponse(schema_list, safe=False, json_dumps_params={'indent': 4, 'ensure_ascii': False})
+
+    except Exception as e:
+        print(f"エラー発生: {e}")
+        traceback.print_exc()
+        logger.error(f"export_schema_json エラー: {e}")
+        return JsonResponse({"error": "エクスポート中にエラーが発生しました"}, status=500)
