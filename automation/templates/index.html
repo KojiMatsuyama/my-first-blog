@@ -19,27 +19,6 @@
 
     <main>
         <section>
-
-            <!-- JSONインポート機能 -->
-            <p>JSONインポート機能:</p>
-            <ul>
-                <li>
-                    <a href="{% url 'automation:import_evaluation' %}" class="button">
-                        Evaluation JSON インポート
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'automation:import_decision' %}" class="button">
-                        Decision JSON インポート
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'automation:import_recognition' %}" class="button">
-                        Recognition JSON インポート
-                    </a>
-                </li>
-            </ul>
-
             <!-- JSONエクスポート機能 -->
             <p>JSONエクスポート機能:</p>
             <ul>
@@ -72,6 +51,29 @@
                 <button type="submit">エクスポート</button>
             </form>
 
+            <!-- 条件選択付きのインポートフォーム -->
+            <p>スキーマを選択してインポート:</p>
+            <form method="post" enctype="multipart/form-data" action="{% url 'automation:import_schema_selected' schema_name='Recognition' %}" id="import-form">
+                {% csrf_token %}
+                <label for="schema">スキーマを選択:</label>
+                <select id="schema" name="schema_name" onchange="updateAction()">
+                    <option value="Recognition">Recognition</option>
+                    <option value="Evaluation">Evaluation</option>
+                    <option value="Decision">Decision</option>
+                </select>
+                <label for="json_file">JSONファイルを選択:</label>
+                <input type="file" id="json_file" name="json_file" accept=".json" required>
+                <button type="submit">インポート</button>
+            </form>
+
+            <script>
+                function updateAction() {
+                    const schema = document.getElementById('schema').value;
+                    const form = document.getElementById('import-form');
+                    form.action = `/automation/import-filtered/${schema}/`;
+                }
+            </script>
+
         </section>
     </main>
 
@@ -80,4 +82,5 @@
     </footer>
 </body>
 </html>
+
 

@@ -1,4 +1,3 @@
-from django.views import View
 from django.views.generic import TemplateView, FormView
 from django.apps import apps
 import os
@@ -15,6 +14,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from .admin import Schema, SchemaFields
 from django.http import HttpResponse, JsonResponse
 from django.apps import apps
+import json
+from django.http import JsonResponse
+from django.views import View
+from django.shortcuts import render, redirect
+# from .models import Schema, SchemaField
 
 # ログの設定
 logger = logging.getLogger(__name__)
@@ -170,6 +174,41 @@ class ImportModelView(BaseDynamicModelView):
                 logger.error(f"レコードのインポート中にエラーが発生しました: {e}")
                 raise  # エラーを再スローし、適切に処理
 
+from .import_schema_from_json import import_schema_from_json
+class ImportSchemaView(View):
+    def get(self, request, *args, **kwargs):
+        # スキーマ選択とファイルアップロード用のフォームを表示
+        return render(request, 'import_schema.html')
+
+    def post(self, request, *args, **kwargs):
+        schema_name = request.POST.get('schema_name')
+        json_file = request.FILES.get('json_file')
+
+        if not schema_name or not json_file:
+            return JsonResponse({'error': 'スキーマ名とJSONファイルは必須です。'}, status=400)
+
+        try:
+            data = json.load(json_file)
+
+            # スキーマの作成または取得
+            schema, created = Schema.objects.get_or_create(name=schema_name)
+
+            # 既存のフィールドを削除して再作成
+            SchemaFields.objects.filter(schema=schema).delete()
+
+            for field in data.get('fields', []):
+                SchemaFields.objects.create(
+                    schema=schema,
+                    name=field['name'],
+                    field_type=field['field_type'],
+                    is_required=field.get('is_required', False)
+                )
+
+            return JsonResponse({'success': f'{schema_name} スキーマをインポートしました。'})
+
+        except Exception as e:
+            return JsonResponse({'error': f'インポート中にエラーが発生しました: {str(e)}'}, status=500)
+
 # def export_schema_json(request):
 #     try:
 #         print("export_schema_json に到達")
@@ -316,7 +355,6 @@ def export_schema_filtered(request):
             content_type='application/json',
             status=500
         )
-
 
 class ExportUnifiedView(View):
     def get(self, request, schema_name, *args, **kwargs):
@@ -543,61 +581,29 @@ class DynamicRecognitionView(FormView):
         logger.error(f"エラー: {error_message}")
         return self.render_to_response({'form': form, 'error_message': error_message})
 
+from .forms import SchemaImportForm
 
-# def export_schema_json(request):
-#     try:
-#         print("export_schema_json に到達")
-#
-#         # Schema モデルを取得
-#         schema_name = "Schema"
-#         SchemaModel = apps.get_model('automation', schema_name)
-#         print(f"取得したモデル: {SchemaModel}")
-#
-#         # モデルのフィールド情報を出力
-#         print("SchemaModel のフィールド:")
-#         for field in SchemaModel._meta.get_fields():
-#             print(f"- {field.name} (type: {type(field)})")
-#
-#         # SchemaField のリレーション名を確認
-#         schemas = SchemaModel.objects.all()
-#         print(f"取得した Schema 件数: {schemas.count()}")
-#
-#         # リレーションがあるか確認
-#         for schema in schemas:
-#             print(f"Schema ID: {schema.id}")
-#             print(f"関連フィールド: {dir(schema)}")
-#
-#         # リレーション名を確認し、正しい名前でアクセス
-#         if hasattr(schema, 'fields'):
-#             schemas = SchemaModel.objects.prefetch_related('fields').all()
-#             field_attr = 'fields'
-#         else:
-#             schemas = SchemaModel.objects.prefetch_related('schemafield_set').all()
-#             field_attr = 'schemafield_set'
-#
-#         schema_list = [
-#             {
-#                 "id": schema.id,
-#                 "name": schema.name,
-#                 "description": schema.description,
-#                 "fields": [
-#                     {
-#                         "id": getattr(field, 'id'),
-#                         "name": getattr(field, 'name'),
-#                         "field_type": getattr(field, 'field_type'),
-#                         "is_required": getattr(field, 'is_required'),
-#                         "choices": getattr(field, 'choices'),
-#                     }
-#                     for field in getattr(schema, field_attr).all()
-#                 ],
-#             }
-#             for schema in schemas
-#         ]
-#
-#         return JsonResponse(schema_list, safe=False, json_dumps_params={'indent': 4, 'ensure_ascii': False})
-#
-#     except Exception as e:
-#         print(f"エラー発生: {e}")
-#         traceback.print_exc()
-#         logger.error(f"export_schema_json エラー: {e}")
-#         return JsonResponse({"error": "エクスポート中にエラーが発生しました"}, status=500)
+class ImportSchemaSelectedView(View):
+    template_name = 'schemas_upload.html'
+
+    def get(self, request, schema_name):
+        form = SchemaImportForm()
+        return render(request, self.template_name, {'form': form, 'schema_name': schema_name})
+
+    def post(self, request, schema_name):
+        form = SchemaImportForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            json_file = request.FILES['json_file']
+
+            try:
+                # JSONデータの読み込みとインポート実行
+                json_data = json_file.read().decode('utf-8')
+                import_schema_from_json(json_data)
+
+                return JsonResponse({"success": True, "message": f"{schema_name} のスキーマをインポートしました。"})
+
+            except Exception as e:
+                return JsonResponse({"success": False, "message": str(e)})
+
+        return render(request, self.template_name, {'form': form, 'schema_name': schema_name})

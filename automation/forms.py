@@ -83,3 +83,5 @@ class DynamicRecognitionForm(forms.Form):
                 cleaned_data[field_name] = None
         return cleaned_data
 
+class SchemaImportForm(forms.Form):
+    json_file = forms.FileField(label="JSONファイルを選択")
