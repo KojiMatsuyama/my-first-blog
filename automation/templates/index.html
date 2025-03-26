@@ -42,8 +42,8 @@
             <!-- 条件選択付きのエクスポートフォーム -->
             <p>スキーマを選択してエクスポート:</p>
             <form method="get" action="{% url 'automation:export_schema_filtered' %}">
-                <label for="schema">スキーマを選択:</label>
-                <select id="schema" name="schema_name">
+                <label for="ex_schema">スキーマを選択:</label>
+                <select id="ex_schema" name="schema_name">
                     <option value="Recognition">Recognition</option>
                     <option value="Evaluation">Evaluation</option>
                     <option value="Decision">Decision</option>
@@ -51,28 +51,65 @@
                 <button type="submit">エクスポート</button>
             </form>
 
-            <!-- 条件選択付きのインポートフォーム -->
-            <p>スキーマを選択してインポート:</p>
-            <form method="post" enctype="multipart/form-data" action="{% url 'automation:import_schema_selected' schema_name='Recognition' %}" id="import-form">
-                {% csrf_token %}
-                <label for="schema">スキーマを選択:</label>
-                <select id="schema" name="schema_name" onchange="updateAction()">
-                    <option value="Recognition">Recognition</option>
-                    <option value="Evaluation">Evaluation</option>
-                    <option value="Decision">Decision</option>
-                </select>
-                <label for="json_file">JSONファイルを選択:</label>
-                <input type="file" id="json_file" name="json_file" accept=".json" required>
-                <button type="submit">インポート</button>
-            </form>
+<!--            &lt;!&ndash; 条件選択付きのインポートフォーム &ndash;&gt;-->
+<!--            <p>スキーマを選択してインポート:</p>-->
+<!--            <form method="post" enctype="multipart/form-data" action="{% url 'automation:import_schema_selected' schema_name='Dummy' %}" id="import-form">-->
+<!--                {% csrf_token %}-->
+<!--                <label for="schema">スキーマを選択:</label>-->
+<!--                <select id="schema" name="schema_name" onchange="updateAction()">-->
+<!--                    <option value="Decision">Decision</option>-->
+<!--                    <option value="Recognition">Recognition</option>-->
+<!--                    <option value="Evaluation">Evaluation</option>-->
+<!--&lt;!&ndash;                    <option value="Decision">Decision</option>&ndash;&gt;-->
 
-            <script>
-                function updateAction() {
-                    const schema = document.getElementById('schema').value;
-                    const form = document.getElementById('import-form');
-                    form.action = `/automation/import-filtered/${schema}/`;
-                }
-            </script>
+<!--                </select>-->
+<!--                <label for="json_file">JSONファイルを選択:</label>-->
+<!--                <input type="file" id="json_file" name="json_file" accept=".json" required>-->
+<!--                <button type="submit">インポート</button>-->
+<!--            </form>-->
+
+<!--            <script>-->
+<!--                function updateAction() {-->
+<!--                    const schema = document.getElementById('schema').value;-->
+<!--                    const form = document.getElementById('import-form');-->
+<!--                    form.action = `/automation/import-filtered/${schema}/`;-->
+<!--                }-->
+<!--            </script>-->
+            <!-- 条件選択付きのインポートフォーム -->
+
+        <p>BBBスキーマを選択してインポート:</p>
+<!--        <form method="post" enctype="multipart/form-data" id="import-form">-->
+         <form method="post" enctype="multipart/form-data" id="import-select-form">
+            {% csrf_token %}
+
+            <label for="in_schema">CCCスキーマを選択:</label>
+            <select id="in_schema" name="schema_name" onchange="updateAction()">
+<!--                <option value="Recognition">Recognition</option>-->
+                <option value="Evaluation">Evaluation</option>
+                <option value="Decision">Decision</option>
+            </select>
+
+            <label for="json_file">AAAJSONファイルを選択:</label>
+            <input type="file" id="json_file" name="json_file" accept=".json" required>
+            <button type="submit">インポート</button>
+        </form>
+
+        <script>
+            function updateAction() {
+                // form.action の値をコンソールに出力
+                console.log("スタート");
+
+                const schema = document.getElementById('in_schema').value;
+                const form = document.getElementById('import-select-form');
+                form.action = `/automation/import-filtered/${schema}/`;
+
+                // form.action の値をコンソールに出力
+                console.log("現在のinフォームアクション: ", form.action);
+            }
+
+            // ページ読み込み時に初期値をセット
+            window.onload = updateAction;
+        </script>
 
         </section>
     </main>
