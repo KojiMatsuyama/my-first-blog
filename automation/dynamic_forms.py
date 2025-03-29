@@ -65,6 +65,10 @@ def register_dynamic_model(model_name, schema_name, table_name):
 
         print(f"[TRACE] Added field '{field.name}' with type '{field_type}'.")
 
+        # 🔴 schema_id を追加
+        fields["schema_id"] = models.ForeignKey(Schema, on_delete=models.CASCADE)
+
+
     # 動的モデルを作成
     try:
         dynamic_model = create_dynamic_model(model_name, fields, app_label="automation")
