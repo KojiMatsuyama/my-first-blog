@@ -51,45 +51,19 @@
                 <button type="submit">エクスポート</button>
             </form>
 
-<!--            &lt;!&ndash; 条件選択付きのインポートフォーム &ndash;&gt;-->
-<!--            <p>スキーマを選択してインポート:</p>-->
-<!--            <form method="post" enctype="multipart/form-data" action="{% url 'automation:import_schema_selected' schema_name='Dummy' %}" id="import-form">-->
-<!--                {% csrf_token %}-->
-<!--                <label for="schema">スキーマを選択:</label>-->
-<!--                <select id="schema" name="schema_name" onchange="updateAction()">-->
-<!--                    <option value="Decision">Decision</option>-->
-<!--                    <option value="Recognition">Recognition</option>-->
-<!--                    <option value="Evaluation">Evaluation</option>-->
-<!--&lt;!&ndash;                    <option value="Decision">Decision</option>&ndash;&gt;-->
-
-<!--                </select>-->
-<!--                <label for="json_file">JSONファイルを選択:</label>-->
-<!--                <input type="file" id="json_file" name="json_file" accept=".json" required>-->
-<!--                <button type="submit">インポート</button>-->
-<!--            </form>-->
-
-<!--            <script>-->
-<!--                function updateAction() {-->
-<!--                    const schema = document.getElementById('schema').value;-->
-<!--                    const form = document.getElementById('import-form');-->
-<!--                    form.action = `/automation/import-filtered/${schema}/`;-->
-<!--                }-->
-<!--            </script>-->
-            <!-- 条件選択付きのインポートフォーム -->
-
-        <p>BBBスキーマを選択してインポート:</p>
+        <p>スキーマを選択してインポート:</p>
 <!--        <form method="post" enctype="multipart/form-data" id="import-form">-->
          <form method="post" enctype="multipart/form-data" id="import-select-form">
             {% csrf_token %}
 
-            <label for="in_schema">CCCスキーマを選択:</label>
+            <label for="in_schema">キーマを選択:</label>
             <select id="in_schema" name="schema_name" onchange="updateAction()">
-<!--                <option value="Recognition">Recognition</option>-->
+                <option value="Recognition">Recognition</option>
                 <option value="Evaluation">Evaluation</option>
                 <option value="Decision">Decision</option>
             </select>
 
-            <label for="json_file">AAAJSONファイルを選択:</label>
+            <label for="json_file">JSONファイルを選択:</label>
             <input type="file" id="json_file" name="json_file" accept=".json" required>
             <button type="submit">インポート</button>
         </form>
