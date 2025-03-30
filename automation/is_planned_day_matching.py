@@ -1,14 +1,14 @@
-def evaluate_bitwise_or(target: str, mask: str) -> bool:
+def is_planned_day_matching(target: str, mask: str) -> bool:
     """
-    評価対象のテキストと評価ビットを基に論理和を計算し、
-    結果が評価ビットと一致する場合はTrue、一致しない場合はFalseを返す。
+    評価対象の曜日と計画曜日を基に論理和を計算し、
+    結果が計画曜日と一致する場合はTrue、一致しない場合はFalseを返す。
 
     Args:
-        target (str): 評価対象のテキスト（8文字のビット文字列）
-        mask (str): 評価ビット（8文字のビット文字列）
+        target (str): 実施された曜日（8文字のビット文字列）
+        mask (str): 計画曜日（8文字のビット文字列）
 
     Returns:
-        bool: 論理和の結果が評価ビットと一致するかどうか
+        bool: 論理和の結果が計画曜日と一致するかどうか
     """
     # 入力値の長さチェック
     if len(target) != 8 or len(mask) != 8:
@@ -33,8 +33,8 @@ def evaluate_bitwise_or(target: str, mask: str) -> bool:
 
 if __name__ == "__main__":
     # テストケース
-    assert evaluate_bitwise_or("10000000", "11000000") == True
-    assert evaluate_bitwise_or("10101010", "11111111") == True
-    assert evaluate_bitwise_or("00000000", "00000000") == True
-    assert evaluate_bitwise_or("10101010", "10000000") == False
+    assert is_planned_day_matching("10000000", "11000000") == True
+    assert is_planned_day_matching("10101010", "11111111") == True
+    assert is_planned_day_matching("00000000", "00000000") == True
+    assert is_planned_day_matching("10101010", "10000000") == False
     print("すべてのテストが成功しました！")

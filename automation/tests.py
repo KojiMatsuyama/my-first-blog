@@ -1,5 +1,5 @@
 # 同じディレクトリにあるevaluate_bitwise_or.pyから関数をインポート
-from evaluate_bitwise_or import evaluate_bitwise_or
+from is_planned_day_matching import evaluate_bitwise_or
 
 # テストケース
 target = "10000000"
