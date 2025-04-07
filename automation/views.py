@@ -1,24 +1,24 @@
-from django.views.generic import TemplateView, FormView
-from django.apps import apps
 import os
 import json
 import logging
 import traceback
-from django.http import JsonResponse, HttpResponse, Http404
+import tempfile
+import pandas as pd
+
+from django.apps import apps
+from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse, JsonResponse, Http404
+from django.shortcuts import render, redirect
+from django.views import View
+from django.views.generic import TemplateView, FormView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-from django.db import models
-from django.shortcuts import render
+
 from .excel_to_json import excel_to_json
-from django.core.exceptions import ObjectDoesNotExist
+from .import_schema_from_json import import_schema_from_json
 from .admin import Schema, SchemaFields
-from django.http import HttpResponse, JsonResponse
-from django.apps import apps
-import json
-from django.http import JsonResponse
-from django.views import View
-from django.shortcuts import render, redirect
-# from .models import Schema, SchemaField
+
 
 # ログの設定
 logger = logging.getLogger(__name__)
@@ -174,26 +174,53 @@ class ImportModelView(BaseDynamicModelView):
                 logger.error(f"レコードのインポート中にエラーが発生しました: {e}")
                 raise  # エラーを再スローし、適切に処理
 
-from .import_schema_from_json import import_schema_from_json
+
+
 class ImportSchemaView(View):
     def get(self, request, *args, **kwargs):
-        # スキーマ選択とファイルアップロード用のフォームを表示
         return render(request, 'import_schema.html')
 
     def post(self, request, *args, **kwargs):
         schema_name = request.POST.get('schema_name')
-        json_file = request.FILES.get('json_file')
+        upload_file = request.FILES.get('json_file')  # ここはJSONでもExcelでもOKとする
 
-        if not schema_name or not json_file:
-            return JsonResponse({'error': 'スキーマ名とJSONファイルは必須です。'}, status=400)
+        if not schema_name or not upload_file:
+            return JsonResponse({'error': 'スキーマ名とファイルは必須です。'}, status=400)
 
         try:
-            data = json.load(json_file)
+            # ファイル拡張子を判定
+            filename = upload_file.name.lower()
+            if filename.endswith('.json'):
+                data = json.load(upload_file)
 
-            # スキーマの作成または取得
+            elif filename.endswith(('.xls', '.xlsx')):
+                # 一時ファイルに保存
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
+                    for chunk in upload_file.chunks():
+                        tmp.write(chunk)
+                    tmp_path = tmp.name
+
+                # Excel → JSON変換
+                df = pd.read_excel(tmp_path)
+                os.remove(tmp_path)  # 一時ファイル削除
+                data = {
+                    'fields': [
+                        {
+                            'name': col,
+                            'field_type': 'CharField',  # 仮にCharFieldとする（必要に応じて拡張）
+                            'is_required': False        # Excelでは取得できないのでFalse固定
+                        }
+                        for col in df.columns
+                    ]
+                }
+
+            else:
+                return JsonResponse({'error': '対応しているファイル形式は JSON または Excel (.xls/.xlsx) です。'}, status=400)
+
+            # スキーマ作成 or 取得
             schema, created = Schema.objects.get_or_create(name=schema_name)
 
-            # 既存のフィールドを削除して再作成
+            # フィールドを一旦削除し再登録
             SchemaFields.objects.filter(schema=schema).delete()
 
             for field in data.get('fields', []):
@@ -208,81 +235,6 @@ class ImportSchemaView(View):
 
         except Exception as e:
             return JsonResponse({'error': f'インポート中にエラーが発生しました: {str(e)}'}, status=500)
-
-# def export_schema_json(request):
-#     try:
-#         print("export_schema_json に到達")
-#         logger.info("export_schema_json に到達")
-#
-#         # Schema モデルを取得
-#         SchemaModel = apps.get_model('automation', 'Schema')
-#         schemas = SchemaModel.objects.all()
-#         print(f"取得したスキーマ数: {schemas.count()}")
-#
-#         # SchemaField のリレーション名を確認
-#         if hasattr(schemas.first(), 'fields'):
-#             print("スキーマに 'fields' リレーションが存在します")
-#             schemas = schemas.prefetch_related('fields')
-#             field_attr = 'fields'
-#         else:
-#             print("スキーマに 'schemafield_set' リレーションが存在します")
-#             schemas = schemas.prefetch_related('schemafield_set')
-#             field_attr = 'schemafield_set'
-#
-#         # JSONデータを構築
-#         schema_list = []
-#         for schema in schemas:
-#             print(f"スキーマ: {schema.name}, ID: {schema.id}")
-#             fields_data = []
-#             for field in getattr(schema, field_attr).all():
-#                 print(f"  フィールド: {field.name}, ID: {field.id}")
-#                 fields_data.append({
-#                     "id": field.id,
-#                     "name": field.name,
-#                     "field_type": field.field_type,
-#                     "is_required": field.is_required,
-#                     "choices": field.choices,
-#                 })
-#             schema_list.append({
-#                 "id": schema.id,
-#                 "name": schema.name,
-#                 "description": schema.description,
-#                 "fields": fields_data,
-#             })
-#
-#         # JSONデータをダウンロード形式で返す
-#         response_data = json.dumps(schema_list, ensure_ascii=False, indent=4)
-#         print(f"レスポンスデータ（サンプル）: {response_data[:200]}")  # 最初の200文字だけ表示
-#
-#         # response = HttpResponse(response_data, content_type='application/json')
-#         response = HttpResponse(response_data, content_type='application/octet-stream')
-#         response['Content-Disposition'] = 'attachment; filename="schema_export.json"'
-#
-#         # ✅ キャッシュ防止ヘッダーを追加（必要に応じて）
-#         response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-#         response['Pragma'] = 'no-cache'
-#         response['Expires'] = '0'
-#
-#         print("レスポンス準備完了")
-#         logger.info("[INFO] Content-Disposition: %s", response['Content-Disposition'])
-#         logger.info("[INFO] Response Content-Type: %s", response['Content-Type'])
-#         logger.info("[INFO] Response Data (Sample): %s", response_data[:500])
-#         logger.info("[INFO] Content-Disposition: %s", response['Content-Disposition'])
-#
-#         return response
-#
-#     except Exception as e:
-#         print(f"エラー発生: {e}")
-#         logger.error(f"エラーが発生しました: {e}")
-#         return HttpResponse(
-#             json.dumps({"error": f"エラーが発生しました: {str(e)}"}, ensure_ascii=False),
-#             content_type='application/json',
-#             status=500
-#         )
-#
-#     except Exception as e:
-#         logger.error(f"export_schema_json エラー: {e}")
-#         return JsonResponse({"error": "エクスポート中にエラーが発生しました"}, status=500)
 
 
 def export_schema_filtered(request):
@@ -520,10 +472,11 @@ class DynamicRecognitionView(FormView):
         logger.debug(f"[DEBUG] Cleaned data from form: {cleaned_data}")
 
         try:
-            # 評価
+            print(self.request)
+            # 状態評価
             from .evaluation import Evaluation
             logger.info("[INFO] Starting Evaluation process.")
-
+            # ここで評価している。
             evaluation_instance = Evaluation(cleaned_data)
             evaluation_result, evaluation_error = evaluation_instance.evaluate()
 
@@ -531,16 +484,30 @@ class DynamicRecognitionView(FormView):
 
             if evaluation_error:
                 return self._render_error(form, evaluation_error)
-
+            # 状態判定
             judge_value = evaluation_result.get('judge')
             if not judge_value:
                 return self._render_error(form, "評価結果にjudgeフィールドが見つかりません。")
 
-            # 決定
+            # 意思決定
             from .decision import Decision
             decision_instance = Decision(judge_value)
             decision_data, decision_error = decision_instance.evaluate()
 
+            # 追加：20250406
+            from .models import Wholesaler
+
+            wholesaler_name = self.request.GET.get('wholesaler')  # 卸名取得
+            contact_phone = None
+            print(f'wholesaler_name={wholesaler_name}')
+            if wholesaler_name:
+                try:
+                    wholesaler = Wholesaler.objects.get(name=wholesaler_name)
+                    contact_phone = wholesaler.contact_phone
+                except Wholesaler.DoesNotExist:
+                    contact_phone = "該当する卸が見つかりません"
+            print(f'contact_number={contact_phone}')
+            # ------
             logger.debug(f"[DEBUG] Decision result: {decision_data}, Error: {decision_error}")
             # デバッグポイント: decision_dataの構造を確認
             logger.debug(f"[DEBUG] Decision data structure: {decision_data.keys()}")
@@ -565,8 +532,10 @@ class DynamicRecognitionView(FormView):
             context = {
                 'form': form,
                 'result': decision_data,
-                'error_message': None
+                'error_message': None,
+                'contact_phone': contact_phone,
             }
+            print(self.request)
             return render(self.request, template_name, context)
 
         except Exception as e:

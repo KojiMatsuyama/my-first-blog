@@ -51,47 +51,75 @@
                 <button type="submit">エクスポート</button>
             </form>
 
-        <p>スキーマを選択してインポート:</p>
-<!--        <form method="post" enctype="multipart/form-data" id="import-form">-->
-         <form method="post" enctype="multipart/form-data" id="import-select-form">
-            {% csrf_token %}
+            <!-- スキーマを選択してインポート -->
+            <p>スキーマを選択してインポート:</p>
+            <form method="post" enctype="multipart/form-data" id="import-select-form">
+<!--                <form method="post" enctype="multipart/form-data" id="import_{{ schema_name }}">-->
 
-            <label for="in_schema">キーマを選択:</label>
-            <select id="in_schema" name="schema_name" onchange="updateAction()">
-                <option value="Recognition">Recognition</option>
-                <option value="Evaluation">Evaluation</option>
-                <option value="Decision">Decision</option>
-            </select>
+                {% csrf_token %}
+                <!-- スキーマ選択 -->
+                <label for="in_schema">スキーマを選択:</label>
+                <select id="in_schema" name="schema_name" required onchange="updateAction()">
+                    <option value="Recognition">Recognition</option>
+                    <option value="Evaluation">Evaluation</option>
+                    <option value="Decision">Decision</option>
+                </select>
+                <br><br>
 
-            <label for="json_file">JSONファイルを選択:</label>
-            <input type="file" id="json_file" name="json_file" accept=".json" required>
-            <button type="submit">インポート</button>
-        </form>
+                <!-- ファイル選択 -->
+                <label for="import_file">Excel／JSONファイルを選択:</label><br>
+                <input type="file" id="import_file" name="import_file" accept=".xlsx, .xls, .json" required><br><br>
 
-        <script>
-            function updateAction() {
-                // form.action の値をコンソールに出力
-                console.log("スタート");
-
-                const schema = document.getElementById('in_schema').value;
-                const form = document.getElementById('import-select-form');
-                form.action = `/automation/import-filtered/${schema}/`;
-
-                // form.action の値をコンソールに出力
-                console.log("現在のinフォームアクション: ", form.action);
-            }
-
-            // ページ読み込み時に初期値をセット
-            window.onload = updateAction;
-        </script>
-
+                <!-- 送信ボタン -->
+                <button type="submit">インポート</button>
+            </form>
         </section>
+
+        <!-- データインポート機能 -->
+        <section>
+            <h2>データインポート</h2>
+
+            <!-- Evaluation インポート -->
+            <form method="post" enctype="multipart/form-data"
+                  action="{% url 'automation:import_evaluation' %}">
+                {% csrf_token %}
+                <label>Evaluation：</label>
+                <input type="file" name="file" accept=".json,.xlsx,.xls" required>
+                <button type="submit">インポート</button>
+            </form>
+
+            <br>
+
+            <!-- Decision インポート -->
+            <form method="post" enctype="multipart/form-data"
+                  action="{% url 'automation:import_decision' %}">
+                {% csrf_token %}
+                <label>Decision：</label>
+                <input type="file" name="file" accept=".json,.xlsx,.xls" required>
+                <button type="submit">インポート</button>
+            </form>
+        </section>
+
     </main>
 
-    <footer>
-        <p>&copy; 2025 Your Team Name. All rights reserved.</p>
-    </footer>
+    <script>
+        function updateAction() {
+            const schema = document.getElementById('in_schema').value;
+            const form = document.getElementById('import-select-form');
+            form.action = `/automation/import-filtered/${in_schema}/`;
+            console.log("更新されたフォームアクション: ", form.action);
+        }
+
+        // 初期表示時にアクションを更新
+        window.addEventListener('load', updateAction);
+
+        // 念のため送信時にもアクションを更新
+        document.getElementById('import-select-form').addEventListener('submit', function(event) {
+            updateAction();
+        });
+    </script>
 </body>
 </html>
+
 
 

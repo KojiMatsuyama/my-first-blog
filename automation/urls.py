@@ -28,7 +28,9 @@ urlpatterns = [
     # path('import/schema/', ImportSchemaView.as_view(), name='import_schema'),
 
     # スキーマ選択インポート
-    path('import-filtered/<str:schema_name>/', ImportSchemaSelectedView.as_view(), name='import_schema_selected'),
+    # path('import-filtered/<str:schema_name>/', ImportSchemaSelectedView.as_view(), name='import_schema_selected'),
+    path('import-filtered/<str:schema_name>/', ImportSchemaSelectedView.as_view(), name='import_selected_aschema'),
+
     # path('import-filtered/', ImportSchemaSelectedView.as_view(), name='import_schema_selected'),
 ]
 

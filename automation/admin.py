@@ -2,7 +2,7 @@ from django.contrib import admin
 from django import forms
 from django.apps import apps
 from .schema import Schema, SchemaFields
-
+from .models import Wholesaler  # Partyモデルをインポート
 
 ### SchemaField Inline ###
 class SchemaFieldInline(admin.TabularInline):
@@ -102,30 +102,6 @@ class GenericDynamicAdmin(DynamicFieldMixin, admin.ModelAdmin):
         dynamic_fields = [field.name for field in schema.fields.all()]
         return list(dict.fromkeys(default_fields + dynamic_fields))
 
+# Partyモデルの登録
+admin.site.register(Wholesaler)  # Partyモデルを管理画面に登録
 
-### モデルの動的管理画面登録 ###
-# 遅延インポートを使用してモデルを取得
-#try:
-    #    Evaluation = apps.get_model('automation', 'Evaluation')
-    #Recognition = apps.get_model('automation', 'Recognition')
-    #Decision = apps.get_model('automation', 'Decision')
-#except LookupError as e:
-    #    print(f"[ERROR] Model lookup failed: {e}")
-    #    Evaluation = None
-    #    Recognition = None
-#    Decision = None
-
-#if Evaluation:
-    #    @admin.register(Evaluation)
-        #    class EvaluationAdmin(GenericDynamicAdmin):
-#        pass
-
-#if Recognition:
-#    @admin.register(Recognition)
-#    class RecognitionAdmin(GenericDynamicAdmin):
-#        pass
-
-#if Decision:
-#    @admin.register(Decision)
-#    class DecisionAdmin(GenericDynamicAdmin):
-#        pass

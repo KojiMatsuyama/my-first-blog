@@ -1,1 +1,1 @@
-alert,week,retail,wholesale,judge
+group,user,file,wholesaler,retailer,protocol,week,judge,alart,tran_id,schema_id

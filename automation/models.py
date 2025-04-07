@@ -105,3 +105,21 @@ def register_dynamic_model(model_name, schema_name, db_table_name):
     except Exception as e:
         print(f"[※ERROR] Error during model registration for '{model_name}': {str(e)}")
         raise e
+
+from django.db import models
+
+class Party(models.Model):
+    name = models.CharField(max_length=255)
+    party_type = models.CharField(max_length=50, choices=[('wholesaler', 'Wholesaler')])
+    contact_email = models.EmailField(blank=True, null=True)
+    contact_phone = models.CharField(max_length=20, blank=True, null=True)
+
+    class Meta:
+        abstract = True
+
+class Wholesaler(Party):
+    registration_number = models.CharField(max_length=100, unique=True)
+    address = models.TextField()
+
+    def __str__(self):
+        return self.name

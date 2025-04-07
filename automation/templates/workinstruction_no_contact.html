@@ -44,9 +44,9 @@
     <h3 id="search-alert">対象のアラートを検索する</h3>
     <p>以下の項目を入力してアラートを検索します。</p>
     <ul>
-        <li>運用グループ=<code>{{ result.operation_group_code }}</code></li>
-        <li>ユーザ=<code>{{ result.user_code }}</code></li>
-        <li>ファイル=<code>{{ result.file_code }}</code></li>
+        <li>運用グループ=<code>{{ request.GET.operation_group_code|default:"-" }}</code></li>
+        <li>ユーザ=<code>{{ request.GET.user_code|default:"-" }}</code></li>
+        <li>ファイル=<code>{{ request.GET.file_code|default:"-" }}</code></li>
     </ul>
     <p>「検索」ボタンを押下</p>
 
@@ -67,9 +67,9 @@
     <h3 id="search-transaction">対象のトランザクションを検索する</h3>
     <p>以下の項目を入力して検索を実施します。</p>
     <ul>
-        <li>運用グループ=<code>{{ result.operation_group_code }}</code></li>
-        <li>ユーザ=<code>{{ result.user_code }}</code></li>
-        <li>ファイル=<code>{{ result.file_code }}</code></li>
+        <li>運用グループ=<code>{{ request.GET.operation_group_code|default:"-" }}</code></li>
+        <li>ユーザ=<code>{{ request.GET.user_code|default:"-" }}</code></li>
+        <li>ファイル=<code>{{ request.GET.file_code|default:"-" }}</code></li>
         <li>状態=<code>停止</code></li>
     </ul>
     <p>「照会」ボタンを押下</p>
@@ -77,7 +77,7 @@
     <h3 id="change-status">状態を中止に変更する</h3>
     <ul>
         <li>該当するレコードを選択</li>
-        <li>「操作」→「中止」を選択し、実行</li>
+        <li>「操作」→「{{ result.edi_operation }}」を選択し、実行</li>
         <li>状態が「中止」になったことを確認</li>
     </ul>
 
@@ -86,7 +86,7 @@
     <h2 id="record-completion">らくらくんに対応完了を記録</h2>
 
     <h3 id="update-alert">対応完了を記録する</h3>
-    <p>アラート本文に「{{ result.error_message }}」が含まれるレコードに対し、以下を実行します。</p>
+    <p>アラート本文に「{{ request.GET.error_message|default:"-" }}」が含まれるレコードに対し、以下を実行します。</p>
     <ul>
         <li>「対応内容」欄に対応履歴を入力</li>
         <li>「ステータス」欄に「完了」と記入し、「保存」を押下</li>
@@ -100,4 +100,3 @@
 
 </body>
 </html>
-

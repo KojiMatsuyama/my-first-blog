@@ -49,17 +49,17 @@
     <h3 id="_5">対象のアラートを検索する</h3>
     <p>画面上部の検索条件で以下の項目を入力する</p>
     <ul>
-        <li>運用グループ=<code class="variable">{{ result.operation_group_code }}</code></li>
-        <li>ユーザ=<code class="variable">{{ result.user_code }}</code></li>
-        <li>ファイル=<code class="variable">{{ result.file_code }}</code></li>
+        <li>運用グループ=<code class="variable">{{ request.GET.operation_group_code|default:"-" }}</code></li>
+        <li>ユーザ=<code class="variable">{{ request.GET.user_code|default:"-" }}</code></li>
+        <li>ファイル=<code class="variable">{{ request.GET.file_code|default:"-" }}</code></li>
     </ul>
     <p>「検索」ボタンを押下</p>
     <p>検索結果の先頭に表示されたトランザクションが条件通りであることを確認する</p>
     <ul>
-        <li>ユーザ=<code class="variable">{{ result.user_code }}</code></li>
-        <li>ファイル=<code class="variable">{{ result.file_code }}</code></li>
+        <li>ユーザ=<code class="variable">{{ request.GET.user_code|default:"-" }}</code></li>
+        <li>ファイル=<code class="variable">{{ request.GET.file_code|default:"-" }}</code></li>
         <li>ステータス=空欄</li>
-        <li>アラート本文=「<span class="variable">{{ result.error_message }}</span>」もしくは、「当該通信スケジュールがリトライオーバーになりました。」</li>
+        <li>アラート本文=「<span class="variable">{{ request.GET.alert }}</span>」もしくは、「当該通信スケジュールがリトライオーバーになりました。」</li>
     </ul>
 
     <h3 id="_6">対象のアラートに対応開始を記録する</h3>
@@ -79,38 +79,40 @@
     <h3 id="_9">対象のトランザクションを検索する</h3>
     <p>画面上部の検索条件で以下の項目を入力する</p>
     <ul>
-        <li>運用グループ=<code class="variable">{{ result.operation_group_code }}</code></li>
-        <li>ユーザ=<code class="variable">{{ result.user_code }}</code></li>
-        <li>ファイル=<code class="variable">{{ result.file_code }}</code></li>
+        <li>運用グループ=<code class="variable">{{ request.GET.operation_group_code|default:"-" }}</code></li>
+        <li>ユーザ=<code class="variable">{{ request.GET.user_code|default:"-" }}</code></li>
+        <li>ファイル=<code class="variable">{{ request.GET.file_code|default:"-" }}</code></li>
         <li>昇順・降順=昇順</li>
         <li>状態=<code>停止</code></li>
     </ul>
     <p>照会ボタンをクリック</p>
     <p>照会結果の先頭に表示されたトランザクションが条件通りであることを確認する</p>
     <ul>
-        <li>運用グループ=<code class="variable">{{ result.operation_group_code }}</code></li>
-        <li>ユーザ=<code class="variable">{{ result.user_code }}</code></li>
-        <li>ファイル=<code class="variable">{{ result.file_code }}</code></li>
+        <li>運用グループ=<code class="variable">{{ request.GET.operation_group_code|default:"-" }}</code></li>
+        <li>ユーザ=<code class="variable">{{ request.GET.user_code|default:"-" }}</code></li>
+        <li>ファイル=<code class="variable">{{ request.GET.file_code|default:"-" }}</code></li>
         <li>状態=<code>停止</code></li>
     </ul>
     <h3 id="_10">状態を変更する</h3>
     <p>照会結果の任意の情報にチェックを入れる</p>
-    <p>「操作」→「<code>中止</code>」を選択</p>
+    <p>「操作」→「{{ result.edi_operation }}」を選択</p>
     <p>実行ボタンをクリック</p>
     <p>状態が<code>中止</code>となったことを確認する</p>
 
     <hr>
     <h2 id="_11">電話連絡</h2>
-    <h3 id="_12">電話連絡を行う手順</h3>
-    <ul>
-        <li>連絡先の電話番号を確認する。</li>
-        <li>指定された連絡先に電話をかける。</li>
-        <li>相手が出たら、自分の名前と担当している案件を伝える。</li>
-        <li>対応状況を説明し、相手の質問に答える。</li>
-        <li>必要な場合は、追加情報や後続の手順について説明する。</li>
-        <li>連絡が終了したら、確認事項をメモしておく。</li>
-    </ul>
-    <p>電話連絡が完了したら、再度システムで対応状況を更新する。</p>
+        <p>まず、<code class="variable">{{ result.contact_number }}</code> に電話をかけ、以下の内容を伝えます。</p>
+
+        <ul>
+            <li>「お世話になっております。こちらは、担当の（自分の名前）です。」</li>
+            <li>「現在、システムで以下のエラーが発生しています。」</li>
+            <li>「エラーは、{{ request.GET.retailer|default:"-" }} とのEDI通信において、{{ request.GET.tran_id|slice:"8:10" }}時{{ request.GET.tran_id|slice:"10:12" }}分に発生しました。」</li>
+        </ul>
+
+        <p>「ご確認のほど、よろしくお願いいたします。」</p>
+        <p>その後、会話内容を記録し、必要なアクションをシステムに反映させてください。</p>
+
 </body>
 </html>
+
 
