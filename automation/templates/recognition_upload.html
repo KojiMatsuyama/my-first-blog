@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel/JSON アップロード</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <header>
+        <h1>Excel/JSON アップロード</h1>
+    </header>
+    <main>
+        <section>
+            <h2>ExcelまたはJSONファイルを選択してください</h2>
+            <form method="post" enctype="multipart/form-data" action="{% url 'automation:import_recognition' %}">
+                {% csrf_token %}
+                <label for="file">ファイルを選択（.json, .xlsx, .xls）：</label>
+                <input type="file" name="file" id="file" accept=".json,.xlsx,.xls" required>
+                <button type="submit" class="button">アップロード</button>
+            </form>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2025 Your Team Name. All rights reserved.</p>
+    </footer>
+</body>
+</html>

@@ -478,7 +478,7 @@ class DynamicRecognitionView(FormView):
             logger.info("[INFO] Starting Evaluation process.")
             # ここで評価している。
             evaluation_instance = Evaluation(cleaned_data)
-            evaluation_result, evaluation_error = evaluation_instance.evaluate()
+            evaluation_result, evaluation_error = evaluation_instance.evaluate() #evaluation.py
 
             logger.debug(f"[DEBUG] Evaluation result: {evaluation_result}, Error: {evaluation_error}")
 
